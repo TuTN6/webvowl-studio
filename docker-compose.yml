@@ -1,9 +1,5 @@
-version: '3'
-
 services:
-    
-    server:
-        build: .
-        command: catalina.sh run
-        ports:
-            - 8080:8080
+  webvowl:
+    build: .
+    ports:
+      - "8080:8080"

@@ -2,15 +2,35 @@
 # WebVOWL #
 ###########
 
-# Use tomcat java 8 alpine as base image
-FROM tomcat:9-jre8-alpine
+FROM node:14-buster AS webvowl-build
 
-# Build time arguments (WebVOWL version)
-ARG version=1.1.7
+WORKDIR /webvowl
 
-# Download WebVOWL to tomcat webapps directory as root app
-RUN rm -rf /usr/local/tomcat/webapps/* && \
-    wget -O /usr/local/tomcat/webapps/ROOT.war http://vowl.visualdataweb.org/downloads/webvowl_1.1.7.war
+COPY package.json Gruntfile.js webpack.config.js ./
+COPY src ./src
+COPY license.txt ./license.txt
 
-# Run default server
-CMD ["catalina.sh", "run"]
+RUN npm install --ignore-scripts
+RUN npm run release
+
+FROM maven:3.9.6-eclipse-temurin-21 AS owl2vowl-build
+
+WORKDIR /owl2vowl
+
+COPY owl2vowl/pom.xml ./pom.xml
+COPY owl2vowl/src ./src
+COPY --from=webvowl-build /webvowl/deploy ./src/main/resources/static
+
+RUN mvn -DskipTests -Denv=war package
+
+FROM eclipse-temurin:21-jre-jammy
+
+WORKDIR /app
+
+COPY --from=owl2vowl-build /owl2vowl/target/owl2vowl.war /app/owl2vowl.war
+
+ENV JAVA_TOOL_OPTIONS="--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED"
+
+EXPOSE 8080
+
+CMD ["java", "-jar", "/app/owl2vowl.war"]

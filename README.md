@@ -1,59 +1,92 @@
-WebVOWL [![Build Status](https://travis-ci.org/VisualDataWeb/WebVOWL.svg?branch=master)](https://travis-ci.org/VisualDataWeb/WebVOWL)
-=======
+# WebVOWL Studio
 
-> [!CAUTION]
-> The URL https://visualdataweb.org/ is not owned bei VisualDataWeb anymore! Not related to WebVOWL anymore.
+WebVOWL Studio is a web-based ontology visualization and editing tool built on
+WebVOWL (VOWL notation). This repository bundles the JavaScript front-end and
+the OWL2VOWL converter so you can load OWL/RDF/Turtle ontologies, render them
+as VOWL graphs, and export or edit them.
 
-This repository was ported from an internal SVN repository to Github after the release of WebVOWL 0.4.0. Due to cleanups with `git filter-branch`, the commit history might show some strange effects.
+## Features
 
-Run Using Docker
-------------
-Make sure you are inside `WebVOWL` directory and you have docker installed. Run the following command to build the docker image:
+- Interactive graph visualization of OWL ontologies using VOWL notation.
+- Import ontologies by IRI, local file upload, or drag and drop.
+- Built-in sample ontologies (FOAF, GoodRelations, MUTO, OntoViBe, PersonasOnto, SIOC).
+- Edit mode for creating and modifying classes, properties, and datatypes.
+- Filters for datatypes, object properties, subclasses, disjointness, set operators, and node degree.
+- Export to JSON, SVG, TeX, Turtle, or a shareable URL.
 
-`docker build . -t webvowl:v1`
+## Project layout
 
-Run the following command to run WebVOWL at port 8080. 
+- `src/webvowl`: Core visualization library and graph engine.
+- `src/app`: WebVOWL application UI, menus, and editor.
+- `src/app/data`: Sample ontology JSON used by the menu.
+- `owl2vowl`: Java converter and Spring server that turns OWL/RDF/Turtle into VOWL JSON.
+- `util/VowlCssToD3RuleConverter`: Helper for inlining SVG styles on export.
+- `doc/Docker`: Legacy Tomcat-based Docker image and notes.
 
-`docker-compose up -d` 
+## Requirements
 
-Visit [http://localhost:8080](http://localhost:8080) to use WebVOWL.
+- Node.js and npm (Dockerfile uses Node 14).
+- Java 8+ and Maven for building the OWL2VOWL module directly.
+- Docker (optional) for containerized builds.
 
-Requirements
-------------
+## Local development
 
-Node.js for installing the development tools and dependencies.
+1) Install dependencies (this runs a build via the postinstall script):
+   `npm install`
+2) Start the dev server with live reload:
+   `npm run webserver`
+   - Opens http://localhost:8000
+3) Create a production build:
+   `npm run release`
 
+Build output is written to `deploy/`.
 
-Development setup
------------------
+## Docker (full app with OWL2VOWL)
 
-### Simple ###
-1. Download and install Node.js from http://nodejs.org/download/
-2. Open the terminal in the root directory
-3. Run `npm install` to install the dependencies and build the project
-4. Edit the code
-5. Run `npm run-script release` to (re-)build all necessary files into the deploy directory
-6. Run `serve deploy/` to run the server locally, by installing serve by using `npm install serve -g`.
+The root `Dockerfile` builds the WebVOWL UI and packages it into the OWL2VOWL server.
 
-Visit [http://localhost:3000](http://localhost:3000) to use WebVOWL.
+```sh
+docker build -t webvowl-studio .
+docker run --rm -p 8080:8080 webvowl-studio
+```
 
-### Advanced ###
-Instead of the last step of the simple setup, install the npm package `grunt-cli` globally with
-`npm install grunt-cli -g`. Now you can execute a few more advanced commands in the terminal:
+Or with Docker Compose:
 
-* `grunt` or `grunt release` builds the release files into the deploy directory
-* `grunt package` builds the development version
-* `grunt webserver` starts a local live-updating webserver with the current development version
-* `grunt test` starts the test runner
-* `grunt zip` builds the project and puts it into a zip file
+```sh
+docker compose up --build
+```
 
+Then open http://localhost:8080.
 
-Additional information
-----------------------
+## OWL2VOWL module
 
-To export the VOWL visualization to an SVG image, all css styles have to be included into the SVG code.
-This means that if you change the CSS code in the `vowl.css` file, you also have to update the code that
-inlines the styles - otherwise the exported SVG will not look the same as the displayed graph.
+The `owl2vowl` folder is a standalone Java project. For detailed usage, see
+`owl2vowl/README.md`. Common tasks:
 
-The tool which creates the code that inlines the styles can be found in the util directory. Please
-follow the instructions in its [README](util/VowlCssToD3RuleConverter/README.md) file.
+```sh
+cd owl2vowl
+mvn package
+mvn package -P war-release
+mvn package -P standalone-release
+```
+
+## UI usage tips
+
+- Load a built-in example from the ontology menu.
+- Visualize a custom ontology by IRI or upload a local OWL/RDF/Turtle file.
+- Drag and drop ontology files onto the canvas.
+- Use the filter and config menus to tune the graph layout and visibility.
+- Export from the export menu (JSON, SVG, TeX, Turtle, or URL).
+- Enable edit mode to create or modify nodes and edges.
+
+## Tests
+
+Run the JavaScript unit tests:
+
+```sh
+npm test
+```
+
+## License
+
+MIT. See `license.txt`.
